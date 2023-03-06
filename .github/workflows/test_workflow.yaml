@@ -20,7 +20,7 @@ on:
         - qa1
         required: true
       deploy:
-        description: 'Custom dev environments'
+        description: 'Deploy Custom dev environments'
         default: false
         type: boolean
 
