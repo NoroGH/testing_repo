@@ -68,7 +68,7 @@ jobs:
 
   edit-image-tag:
     needs: Build-Push-Docker-Image-to-ECR
-    if: ${{ github.event_name == 'push' || ( github.event_name == "workflow_dispatch" && inputs.deploy == "true" && inputs.environment != "null" ) }}
+    if: ${{ github.event_name == 'push' || ( github.event_name == 'workflow_dispatch' && inputs.deploy == 'true' && inputs.environment != 'null' ) }}
     name: Edit Image tag in values.yaml
     runs-on: ubuntu-latest
     steps:
@@ -84,7 +84,7 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_SHA:0:15}" >> $GITHUB_ENV
 
       - name: Edit Image tag for custom environments 
-        if: ${{ github.event_name == "workflow_dispatch" }}
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |-
           echo "${{ inputs.environment }}"
           #yq e -i '.keyword-helm.api.imageTag = env(RELEASE_VERSION)' ./kw-live-environments/helm-values/${{ inputs.environment }}/values.yaml;
