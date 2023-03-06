@@ -68,7 +68,7 @@ jobs:
 
   edit-image-tag:
     needs: Build-Push-Docker-Image-to-ECR
-    if: ${{ github.event_name == 'push' || ( github.event_name == 'workflow_dispatch' && inputs.deploy == "true" && inputs.environment != "null" ) }}
+    if: ${{ github.event_name == 'push' || ( github.event_name == 'workflow_dispatch' && inputs.deploy == 'true' && inputs.environment != 'null' ) }}
     name: Edit Image tag in values.yaml
     runs-on: ubuntu-latest
     steps:
