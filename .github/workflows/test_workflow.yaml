@@ -12,8 +12,9 @@ on:
       environment:
         description: 'Custom dev environments'
         type: choice
-        default: "null"
+        default: 'null'
         options:
+        - 'null'
         - be1
         - be2
         - fe1
@@ -68,7 +69,7 @@ jobs:
 
   edit-image-tag:
     needs: Build-Push-Docker-Image-to-ECR
-    if: ${{ github.event_name == 'push' || ( github.event_name == 'workflow_dispatch' && inputs.deploy == 'true' && inputs.environment != 'null' ) }}
+    if: ${{ github.event_name == 'push' || ( github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true' && github.event.inputs.environment != 'null' ) }}
     name: Edit Image tag in values.yaml
     runs-on: ubuntu-latest
     steps:
