@@ -87,6 +87,7 @@ jobs:
       - name: Edit Image tag for custom environments 
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |-
+          tag="${{ inputs.environment }}-$RELEASE_VERSION"
           echo "${{ inputs.environment }}"
           #yq e -i '.keyword-helm.api.imageTag = env(RELEASE_VERSION)' ./kw-live-environments/helm-values/${{ inputs.environment }}/values.yaml;
 
