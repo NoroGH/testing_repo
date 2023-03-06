@@ -47,7 +47,7 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_SHA:0:15}" >> $GITHUB_ENV
 
       - name: Build and Test Feature
-        if: ${{ steps.extract_branch.outputs.branch != 'develop' }}
+        if: ${{ steps.extract_branch.outputs.branch != 'develop' && startsWith(github.ref, 'refs/heads') }}
         run: |-
           echo "building ${{ steps.extract_branch.outputs.branch }}"
 
