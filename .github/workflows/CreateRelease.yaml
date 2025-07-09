@@ -1,0 +1,59 @@
+name: Create Release
+run-name: Create ${{ github.event.inputs.version_type }} Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version increment type'
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get latest release version
+        run: |
+          latest=$(gh release list --json tagName,isLatest -q '.[] | select(.isLatest==true) | .tagName') || echo "v0.0.0"
+          echo "CURRENT_VERSION=${latest#v}" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Calculate new version
+        id: calc_version
+        run: |
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+          case "${{ github.event.inputs.version_type }}" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+          new_version="v${major}.${minor}.${patch}"
+          echo "NEW_VERSION=${new_version}" >> $GITHUB_ENV
+
+      - name: Create release
+        run: |
+          gh release create $NEW_VERSION \
+            --target master \
+            --generate-notes \
+            --title "$NEW_VERSION"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
