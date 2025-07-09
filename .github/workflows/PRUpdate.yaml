@@ -1,5 +1,5 @@
 name: PR Update
-run-name: Merge ${{ github.event.inputs.source_branch }} to ${{ github.event.inputs.target_branch }}
+run-name: Updating Issues on PR Close for ${{ github.base_ref }}
 
 on:
   pull_request:
