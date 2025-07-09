@@ -21,7 +21,7 @@ jobs:
 #Fix the Repo name
 
       - name: Add Develop Labels to Issues
-        if: github.event.pull_request.base_ref == 'develop'
+        if: github.base_ref == 'develop'
         run: |
           issues=$(gh api graphql -F owner='NoroGH' -F repo='testing_repo' -F pr=${{ github.event.pull_request.number }} -f query='
             query ($owner: String!, $repo: String!, $pr: Int!) {
@@ -48,7 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Add Staging Labels to Issues
-        if: github.event.pull_request.base_ref == 'staging'
+        if: github.base_ref == 'staging'
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
 
