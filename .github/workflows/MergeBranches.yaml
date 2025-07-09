@@ -1,0 +1,95 @@
+name: Merge ${{ github.event.inputs.source_branch }} to ${{ github.event.inputs.target_branch }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch (staging/develop)'
+        required: true
+        type: choice
+        options:
+          - staging
+          - develop
+      target_branch:
+        description: 'Target branch (master/develop/staging)'
+        required: true
+        type: choice
+        options:
+          - master
+          - develop
+          - staging
+
+jobs:
+  merge_branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate branch combination
+        run: |
+          if [[ "${{ github.event.inputs.source_branch }}" == "${{ github.event.inputs.target_branch }}" ]]; then
+            echo "Error: Source and target branches cannot be the same"
+            exit 1
+          fi
+
+          if [[ "${{ github.event.inputs.source_branch }}" == "develop" && "${{ github.event.inputs.target_branch }}" == "master" ]]; then
+            echo "Error: Cannot merge develop directly to master"
+            exit 1
+          fi
+
+      - name: Merge branches
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout ${{ github.event.inputs.target_branch }}
+          git pull origin ${{ github.event.inputs.target_branch }}
+          git pull origin ${{ github.event.inputs.source_branch }}
+          git push origin ${{ github.event.inputs.target_branch }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Update Issue Labels
+        run: |
+          if [[ "${{ github.event.inputs.source_branch }}" == "develop" && "${{ github.event.inputs.target_branch }}" == "staging" ]]; then
+            issues=$(gh issue list \
+            --label "Develop" \
+            --state all \
+            --json number \
+            --limit 100)
+            for issue in $(echo "$issues" | jq -r '.[].number'); do
+              gh issue edit $issue --remove-label "Develop"
+              gh issue edit $issue --add-label "Staging"
+            done
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Send Slack Notification
+        if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
+        run: |
+          # Get issues with label matching source branch
+          issues=$(gh issue list \
+            --label "${{ github.event.inputs.source_branch }}" \
+            --state all \
+            --json url,number,title,assignees \
+            --limit 100)
+
+          # Prepare message header
+          message="*${{ github.event.inputs.source_branch }} deployment has started.* The following issues are included in this release:\n"
+
+          # Process each issue and format for Slack
+          echo "$issues" | jq -r '.[] | "• <\(.url)|#\(.number)>(\(.assignees[].login | "@" + .)) \(.title)"' | \
+          while IFS= read -r line; do
+            message+="$line\n"
+          done
+
+          # Send to Slack
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"$message\", \"mrkdwn\": true}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
