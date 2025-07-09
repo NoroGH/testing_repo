@@ -1,4 +1,5 @@
-name: Create ${{ github.event.inputs.version_type }} Release
+name: Create Release
+run-name: Create ${{ github.event.inputs.version_type }} Release
 
 on:
   workflow_dispatch:
