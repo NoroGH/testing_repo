@@ -9,7 +9,7 @@ on:
     types: [closed]
 
 jobs:
-  merge_branches:
+  update-issues:
     runs-on: ubuntu-latest
 
     steps:
