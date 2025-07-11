@@ -1,5 +1,5 @@
 name: PR Update
-run-name: Merge ${{ github.event.inputs.source_branch }} to ${{ github.event.inputs.target_branch }}
+run-name: Updating Issues on PR Close for ${{ github.base_ref }}
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
     types: [closed]
 
 jobs:
-  merge_branches:
+  update-issues:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +20,8 @@ jobs:
 
 #Fix the Repo name
 
-      - name: Add Labels to Issues
+      - name: Add Develop Labels to Issues
+        if: github.base_ref == 'develop'
         run: |
           issues=$(gh api graphql -F owner='NoroGH' -F repo='testing_repo' -F pr=${{ github.event.pull_request.number }} -f query='
             query ($owner: String!, $repo: String!, $pr: Int!) {
@@ -34,6 +35,30 @@ jobs:
                 }
               }
             }'  --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[].number')
+
+          if [ -z "$issues" ]; then
+            echo "No issues found in PR body."
+            exit 0
+          fi
+
+          for issue in $issues; do
+            gh issue edit $issue --add-label ${GITHUB_BASE_REF^}
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Add Staging Labels to Issues
+        if: github.base_ref == 'staging'
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          issues=$(echo "$PR_BODY" | grep -Eio '((close[sd]?|fix(e[sd]?|d)?|resolve[sd]?)\s+#([0-9]+))' | sed -E 's/.*#([0-9]+)/\1/')
+
+          if [ -z "$issues" ]; then
+            echo "No issues found in PR body."
+            exit 0
+          fi
+
           for issue in $issues; do
             gh issue edit $issue --add-label ${GITHUB_BASE_REF^}
           done
