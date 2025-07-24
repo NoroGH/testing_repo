@@ -79,7 +79,7 @@ jobs:
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
 
       - name: Send Slack Notification
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
