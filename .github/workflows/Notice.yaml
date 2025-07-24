@@ -1,0 +1,64 @@
+name: Staging DB Operations
+run-name: ${{ github.event.inputs.operation || 'Daily' }} Staging DB
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Operation to perform'
+        required: true
+        type: choice
+        options:
+          - dump
+          - download
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  staging_db_ops:
+    runs-on: ubuntu-latest
+
+    steps:
+      # - name: Configure AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: arn:aws:iam::992382451515:role/Github-codesignal-main-app-staging-db-dumpBucketAccess
+      #     aws-region: us-east-1
+
+      - name: Dump and Upload DB
+        if: github.event.inputs.operation == 'dump' || github.event.schedule
+        shell: bash
+        run: |
+          # Dump the database
+          echo "Creating database dump..."
+          mkdir -p /tmp/staging-db-dump
+          cd /tmp/staging-db-dump
+          echo 'mongodump "STAGING_MONGO_URL" &>/dev/null'
+          # cd dump
+          # mv staging ./meteor
+
+          # zip_name="staging-db.zip"
+          # zip -r $zip_name * > /dev/null
+
+          # Upload to S3
+          echo "Uploading dump to S3..."
+          # aws s3 cp $zip_name s3://codesignal-main-app-staging-db-dump/$zip_name
+
+          echo "Database dump uploaded successfully to s3://codesignal-main-app-staging-db-dump/$zip_name"
+
+      - name: Generate Download URL
+        if: github.event.inputs.operation == 'download'
+        shell: bash
+        run: |
+          # presigned_url="https://test-codesignal-main-app-staging-db-dump.s3.amazonaws.com/staging-db.zip"
+          # presigned_url=$(aws s3 presign \
+            s3://codesignal-main-app-staging-db-dump/staging-db.zip \
+            --expires-in 7200)
+
+          echo "::notice title=Download URL (valid for 1 hour)::$presigned_url"
+          echo "Presigned URL has been generated and is valid for 1 hour"

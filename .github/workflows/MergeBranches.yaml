@@ -81,11 +81,9 @@ jobs:
       - name: Send Slack Notification
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
-          # Prepare message header
           message="*${TARGET_BRANCH^} deployment has started.* The following issues are included in this release:\n"
           issue_lines=""
 
-          # Process each issue and format for Slack
           issue_lines=$(echo "$ISSUES" | jq -r '.[] | "\(.url)|\(.number)|\(.assignees[].login // "Unassigned")|\(.title)"' | \
             while IFS='|' read -r url number assignees title; do
               echo "• <$url|#$number>($assignees) $title"
@@ -93,7 +91,6 @@ jobs:
 
           message+="$issue_lines"
 
-          # Send to Slack
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\":\"$message\", \"mrkdwn\": true}" \
             ${SLACK_WEBHOOK_URL}
