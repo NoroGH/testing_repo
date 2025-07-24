@@ -59,47 +59,39 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      # - name: Setup tmate session
-      #   uses: mxschmitt/action-tmate@v3
-      #   with:
-      #     limit-access-to-actor: true
-
       - name: Update Issue Labels
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
           export ISSUES=$(gh issue list \
-            --label "develop" \
+            --label "${SOURCE_BRANCH^}" \
             --state all \
             --json url,number,title,assignees \
             --limit 100)
 
           echo "ISSUES=$ISSUES" >> $GITHUB_ENV
 
-          echo $ISSUES
-
-          # for issue in $(echo "$ISSUES" | jq -r '.[].number'); do
-          #   gh issue edit $issue --remove-label "Develop"
-          #   gh issue edit $issue --add-label "Staging"
-          # done
+          for issue in $(echo "$ISSUES" | jq -r '.[].number'); do
+            gh issue edit $issue --remove-label "Develop"
+            gh issue edit $issue --add-label "Staging"
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          SOURCE_BRANCH: ${{ github.event.inputs.source_branch }}
 
       - name: Send Slack Notification
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
           # Prepare message header
-          message="*${{ github.event.inputs.target_branch }} deployment has started.* The following issues are included in this release:\n"
+          message="*${TARGET_BRANCH^} deployment has started.* The following issues are included in this release:\n"
           issue_lines=""
 
           # Process each issue and format for Slack
           issue_lines=$(echo "$ISSUES" | jq -r '.[] | "\(.url)|\(.number)|\(.assignees[].login // "Unassigned")|\(.title)"' | \
             while IFS='|' read -r url number assignees title; do
-              echo "• <$url|#$number> ($assignees) $title"
+              echo "• <$url|#$number>($assignees) $title"
             done)
 
           message+="$issue_lines"
-
-          echo ${message}
 
           # Send to Slack
           curl -X POST -H 'Content-type: application/json' \
@@ -108,3 +100,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TARGET_BRANCH: ${{ github.event.inputs.target_branch }}
