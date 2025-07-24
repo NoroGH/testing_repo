@@ -67,44 +67,47 @@ jobs:
       - name: Update Issue Labels
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
-          echo ${GH_TOKEN}
+          gh issue list \
+            --label "develop" \
+            --state all \
+            --json url,number,title,assignees \
+            --limit 100
           export ISSUES=$(gh issue list \
             --label "develop" \
             --state all \
             --json url,number,title,assignees \
             --limit 100)
 
-          for issue in $(echo "$ISSUES" | jq -r '.[].number'); do
-            gh issue edit $issue --remove-label "Develop"
-            gh issue edit $issue --add-label "Staging"
-          done
+          # for issue in $(echo "$ISSUES" | jq -r '.[].number'); do
+          #   gh issue edit $issue --remove-label "Develop"
+          #   gh issue edit $issue --add-label "Staging"
+          # done
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Send Slack Notification
-        if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
-        run: |
-          # Prepare message header
-          message="*${{ github.event.inputs.target_branch }} deployment has started.* The following issues are included in this release:\n"
-          issue_lines=""
+      # - name: Send Slack Notification
+      #   if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
+      #   run: |
+      #     # Prepare message header
+      #     message="*${{ github.event.inputs.target_branch }} deployment has started.* The following issues are included in this release:\n"
+      #     issue_lines=""
 
-          # Process each issue and format for Slack
-          issue_lines=$(echo "$ISSUES" | jq -r '.[] | "\(.url)|\(.number)|\(.assignees[].login // "Unassigned")|\(.title)"' | \
-            while IFS='|' read -r url number assignees title; do
-              echo "• <$url|#$number> ($assignees) $title"
-            done)
+      #     # Process each issue and format for Slack
+      #     issue_lines=$(echo "$ISSUES" | jq -r '.[] | "\(.url)|\(.number)|\(.assignees[].login // "Unassigned")|\(.title)"' | \
+      #       while IFS='|' read -r url number assignees title; do
+      #         echo "• <$url|#$number> ($assignees) $title"
+      #       done)
 
-          echo ${issue_lines}
+      #     echo ${issue_lines}
 
-          message+="$issue_lines"
+      #     message+="$issue_lines"
 
-          echo ${message}
+      #     echo ${message}
 
-          # Send to Slack
-          curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"$message\", \"mrkdwn\": true}" \
-            ${SLACK_WEBHOOK_URL}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     # Send to Slack
+      #     curl -X POST -H 'Content-type: application/json' \
+      #       --data "{\"text\":\"$message\", \"mrkdwn\": true}" \
+      #       ${SLACK_WEBHOOK_URL}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
