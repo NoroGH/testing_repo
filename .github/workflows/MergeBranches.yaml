@@ -79,7 +79,7 @@ jobs:
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
           # Prepare message header
-          message="*Staging deployment has started.* The following issues are included in this release:\n"
+          message="*${{ github.event.inputs.target_branch }} deployment has started.* The following issues are included in this release:\n"
           issue_lines=""
 
           # Process each issue and format for Slack
@@ -88,7 +88,11 @@ jobs:
               echo "• <$url|#$number> ($assignees) $title"
             done)
 
+          echo ${issue_lines}
+
           message+="$issue_lines"
+
+          echo ${message}
 
           # Send to Slack
           curl -X POST -H 'Content-type: application/json' \
