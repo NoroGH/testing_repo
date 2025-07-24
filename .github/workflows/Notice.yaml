@@ -55,10 +55,10 @@ jobs:
         if: github.event.inputs.operation == 'download'
         shell: bash
         run: |
-          # presigned_url="https://test-codesignal-main-app-staging-db-dump.s3.amazonaws.com/staging-db.zip"
+          presigned_url="https://test-codesignal-main-app-staging-db-dump.s3.amazonaws.com/staging-db.zip"
           # presigned_url=$(aws s3 presign \
-            s3://codesignal-main-app-staging-db-dump/staging-db.zip \
-            --expires-in 7200)
+          #   s3://codesignal-main-app-staging-db-dump/staging-db.zip \
+          #   --expires-in 7200)
 
           echo "::notice title=Download URL (valid for 1 hour)::$presigned_url"
           echo "Presigned URL has been generated and is valid for 1 hour"
