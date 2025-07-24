@@ -59,14 +59,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      #   with:
+      #     limit-access-to-actor: true
 
       - name: Update Issue Labels
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
+          echo ${GH_TOKEN}
           export ISSUES=$(gh issue list \
             --label "develop" \
             --state all \
@@ -79,7 +80,7 @@ jobs:
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Send Slack Notification
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
@@ -103,6 +104,7 @@ jobs:
           # Send to Slack
           curl -X POST -H 'Content-type: application/json' \
             --data "{\"text\":\"$message\", \"mrkdwn\": true}" \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+            ${SLACK_WEBHOOK_URL}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
