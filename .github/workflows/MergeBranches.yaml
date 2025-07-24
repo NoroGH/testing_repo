@@ -68,7 +68,7 @@ jobs:
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
           export ISSUES=$(gh issue list \
-            --label "${{ github.event.inputs.source_branch }}" \
+            --label "develop" \
             --state all \
             --json url,number,title,assignees \
             --limit 100)
@@ -79,6 +79,7 @@ jobs:
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Send Slack Notification
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
