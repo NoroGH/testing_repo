@@ -62,12 +62,12 @@ jobs:
       - name: Update Issue Labels
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
-          issues=$(gh issue list \
+          export ISSUES=$(gh issue list \
           --label "Develop" \
           --state all \
           --json number \
           --limit 100)
-          for issue in $(echo "$issues" | jq -r '.[].number'); do
+          for issue in $(echo "$ISSUES" | jq -r '.[].number'); do
             gh issue edit $issue --remove-label "Develop"
             gh issue edit $issue --add-label "Staging"
           done
@@ -77,18 +77,12 @@ jobs:
       - name: Send Slack Notification
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
-          # Get issues with label matching source branch
-          issues=$(gh issue list \
-            --label "${{ github.event.inputs.source_branch }}" \
-            --state all \
-            --json url,number,title,assignees \
-            --limit 100)
 
           # Prepare message header
-          message="*${{ github.event.inputs.source_branch }} deployment has started.* The following issues are included in this release:\n"
+          message="*${{ github.event.inputs.target_branch }} deployment has started.* The following issues are included in this release:\n"
 
           # Process each issue and format for Slack
-          echo "$issues" | jq -r '.[] | "• <\(.url)|#\(.number)>(\(.assignees[].login | "@" + .)) \(.title)"' | \
+          echo "$ISSUES" | jq -r '.[] | "• <\(.url)|#\(.number)>(\(.assignees[].login | "@" + .)) \(.title)"' | \
           while IFS= read -r line; do
             message+="$line\n"
           done
