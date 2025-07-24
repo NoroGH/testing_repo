@@ -46,6 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git config pull.rebase false
           git checkout ${{ github.event.inputs.target_branch }}
           git pull origin ${{ github.event.inputs.target_branch }}
           git pull origin ${{ github.event.inputs.source_branch }}
@@ -54,18 +55,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Update Issue Labels
+        if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
-          if [[ "${{ github.event.inputs.source_branch }}" == "develop" && "${{ github.event.inputs.target_branch }}" == "staging" ]]; then
-            issues=$(gh issue list \
-            --label "Develop" \
-            --state all \
-            --json number \
-            --limit 100)
-            for issue in $(echo "$issues" | jq -r '.[].number'); do
-              gh issue edit $issue --remove-label "Develop"
-              gh issue edit $issue --add-label "Staging"
-            done
-          fi
+          issues=$(gh issue list \
+          --label "Develop" \
+          --state all \
+          --json number \
+          --limit 100)
+          for issue in $(echo "$issues" | jq -r '.[].number'); do
+            gh issue edit $issue --remove-label "Develop"
+            gh issue edit $issue --add-label "Staging"
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
