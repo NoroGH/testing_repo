@@ -48,7 +48,6 @@ jobs:
       #     GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Add Staging Labels to Issues
-        if: github.base_ref == 'staging'
         run: |
           PR_BODY='${{ github.event.pull_request.body }}'
 
