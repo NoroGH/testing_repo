@@ -114,7 +114,7 @@ jobs:
 
           curl -X POST -H 'Content-type: application/json' \
             --data "$json_message" \
-            ${SLACK_PRODUCT_TESTING_WEBHOOK_URL}
+            ${SLACK_WEBHOOK_URL}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
