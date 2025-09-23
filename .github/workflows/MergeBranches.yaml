@@ -77,26 +77,44 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           SOURCE_BRANCH: ${{ github.event.inputs.source_branch }}
-
+      
+      - name: Update Issue Labels for Production
+        if: github.event.inputs.source_branch == 'staging' && github.event.inputs.target_branch == 'master'
+        run: |
+          export ISSUES=$(gh issue list \
+            --label "${SOURCE_BRANCH^}" \
+            --state all \
+            --json url,number,title,assignees \
+            --limit 100)
+          echo "ISSUES=$ISSUES" >> $GITHUB_ENV
+          for issue in $(echo "$ISSUES" | jq -r '.[].number'); do
+            gh issue edit $issue --remove-label "Staging"
+            gh issue edit $issue --add-label "Production"
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          SOURCE_BRANCH: ${{ github.event.inputs.source_branch }}
+      
       - name: Send Slack Notification
         if: github.event.inputs.source_branch == 'develop' && github.event.inputs.target_branch == 'staging'
         run: |
-          # Prepare message header
-          message="*${TARGET_BRANCH^} deployment has started.* The following issues are included in this release:\n"
+          message="*${TARGET_BRANCH^} deployment has started.* The following issues are included in this release:"
           issue_lines=""
 
-          # Process each issue and format for Slack
+          issue_lines=""
+
           issue_lines=$(echo "$ISSUES" | jq -r '.[] | "\(.url)|\(.number)|\(.assignees[].login // "Unassigned")|\(.title)"' | \
             while IFS='|' read -r url number assignees title; do
               echo "• <$url|#$number>($assignees) $title"
             done)
 
-          message+="$issue_lines"
+          message="$message"$'\n'"$issue_lines"
 
-          # Send to Slack
+          json_message=$(jq -Rn --arg msg "$message" '{text: $msg, mrkdwn: true}')
+
           curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"$message\", \"mrkdwn\": true}" \
-            ${SLACK_WEBHOOK_URL}
+            --data "$json_message" \
+            ${SLACK_PRODUCT_TESTING_WEBHOOK_URL}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
